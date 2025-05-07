@@ -10,9 +10,10 @@
 <body>
     <div class="container mt-5">
         <h1>Welcome to {{ title }}</h1>
-        <p>This is a simple blog demo that will showcase Supabase features.</p>
-        <div class="alert {% if 'error' in supabase_status %}alert-danger{% else %}alert-success{% endif %}" role="alert">
-            {{ supabase_status }}
+        <p>This is a simple blog demo that showcases Supabase features.</p>
+        
+        <div class="mt-4">
+            <a href="/blog/posts" class="btn btn-primary">View Blog Posts</a>
         </div>
     </div>
 </body>
