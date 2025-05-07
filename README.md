@@ -45,3 +45,7 @@ The application will be available at http://localhost:8000
 ## Development
 
 By default, the application will connect to a local Supabase instance. To use a cloud instance, set the appropriate environment variables in `.env`.
+
+## Documentation
+
+- [Database Schema and Test Data](docs/database.md)
