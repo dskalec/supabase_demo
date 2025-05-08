@@ -2,10 +2,6 @@
 
 A simple blog application demonstrating various Supabase features using FastAPI.
 
-## Documentation
-
-- [Supabase Overview](docs/supabase_overview.md) - A comprehensive guide to Supabase features and capabilities
-
 ## Setup
 
 1. Create a virtual environment:
@@ -49,3 +45,7 @@ The application will be available at http://localhost:8000
 ## Development
 
 By default, the application will connect to a local Supabase instance. To use a cloud instance, set the appropriate environment variables in `.env`.
+
+## Documentation
+
+- [Supabase Overview](docs/supabase_overview.md) - A comprehensive guide to Supabase features and capabilities
