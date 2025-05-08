@@ -32,7 +32,7 @@ async def signup(
             "password": password,
             "options": {
                 "data": {
-                    "display_name": name
+                    "name": name
                 }
             }
         })
