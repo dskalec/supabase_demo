@@ -2,6 +2,10 @@
 
 A simple blog application demonstrating various Supabase features using FastAPI.
 
+## Documentation
+
+- [Supabase Overview](docs/supabase_overview.md) - A comprehensive guide to Supabase features and capabilities
+
 ## Setup
 
 1. Create a virtual environment:
