@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time for Pizza! 🍕</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #ffffff;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 0;
+            background-color: #ff6b6b;
+            color: white;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            padding: 30px 20px;
+            background-color: #ffffff;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #ff6b6b;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            background-color: #f8f9fa;
+            border-radius: 0 0 8px 8px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .divider {
+            border-top: 1px solid #eee;
+            margin: 20px 0;
+        }
+        .emoji {
+            font-size: 24px;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🍕 Blog Demo 🍕</div>
+            <h1>Your Pizza is Almost Ready!</h1>
+        </div>
+        
+        <div class="content">
+            <p>Hello there! <span class="emoji">👋</span></p>
+            
+            <p>We're getting your virtual pizza oven ready, but first we need to confirm your email address. It's like checking if the oven is hot enough before we put the pizza in! <span class="emoji">🔥</span></p>
+            
+            <div style="text-align: center;">
+                <a href="{{ .ConfirmationURL }}" class="button">Confirm & Get Pizza! 🍕</a>
+            </div>
+            
+            <p>If the button above is as cold as yesterday's pizza, you can also copy and paste this link into your browser:</p>
+            
+            <p style="word-break: break-all; color: #666;">
+                {{ .ConfirmationURL }}
+            </p>
+            
+            <div class="divider"></div>
+            
+            <p style="color: #666; font-size: 14px;">
+                If you didn't order this pizza (I mean, create this account), you can safely ignore this email. No pizza for you! <span class="emoji">😢</span>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>This is an automated message, but our love for pizza is real! <span class="emoji">❤️</span></p>
+            <p>&copy; {{ .Year }} Blog Demo. All rights reserved. (Pizza rights included) <span class="emoji">🍕</span></p>
+        </div>
+    </div>
+</body>
+</html>
