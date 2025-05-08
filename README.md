@@ -49,3 +49,5 @@ By default, the application will connect to a local Supabase instance. To use a 
 ## Documentation
 
 - [Database Schema and Test Data](docs/database.md)
+- [Authentication](docs/auth.md)
+- [Image Upload and Storage](docs/storage.md)

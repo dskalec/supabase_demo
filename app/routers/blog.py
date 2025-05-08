@@ -1,13 +1,52 @@
-from fastapi import APIRouter, Request, HTTPException, Depends, Form
+from fastapi import APIRouter, Request, HTTPException, Depends, Form, UploadFile, File
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 from ..supabase_config import supabase
 from postgrest.exceptions import APIError
 from ..dependencies import get_current_user
 from typing import Optional
+import uuid
+import os
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+
+async def upload_image(file: Optional[UploadFile] = None) -> Optional[str]:
+    if not file:
+        return None
+        
+    # Generate a unique filename
+    file_extension = os.path.splitext(file.filename)[1]
+    file_name = f"{uuid.uuid4()}{file_extension}"
+    
+    # Upload to Supabase Storage
+    try:
+        file_content = await file.read()
+        result = supabase.storage.from_('post_images').upload(
+            file_name,
+            file_content,
+            {"content-type": file.content_type}
+        )
+        
+        # Get the public URL
+        url = supabase.storage.from_('post_images').get_public_url(file_name)
+        return url
+    except Exception as e:
+        print(f"Error uploading file: {e}")
+        return None
+
+async def delete_image(image_url: str) -> bool:
+    if not image_url:
+        return True
+        
+    try:
+        # Extract filename from URL
+        file_name = image_url.split('/')[-1]
+        supabase.storage.from_('post_images').remove([file_name])
+        return True
+    except Exception as e:
+        print(f"Error deleting file: {e}")
+        return False
 
 @router.get("/posts")
 async def list_posts(request: Request, user = Depends(get_current_user)):
@@ -57,22 +96,27 @@ async def create_post(
     request: Request,
     title: str = Form(...),
     content: str = Form(...),
+    image: Optional[UploadFile] = File(None),
     user = Depends(get_current_user)
 ):
     if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    
+        raise HTTPException(status_code=401, detail="Not authenticated")
+        
     try:
-        post = supabase.table("posts").insert({
+        # Upload image if provided
+        image_url = await upload_image(image)
+        
+        # Create post
+        result = supabase.table("posts").insert({
             "title": title,
             "content": content,
+            "image_url": image_url,
             "user_id": user["id"]
         }).execute()
         
-        return RedirectResponse(url=f"/blog/posts/{post.data[0]['id']}", status_code=303)
+        return RedirectResponse(url="/blog/posts", status_code=303)
     except APIError as e:
-        print(f"Error creating post: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to create post")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/posts/{post_id}")
 async def get_post(request: Request, post_id: str, user = Depends(get_current_user)):
@@ -131,50 +175,75 @@ async def update_post(
     post_id: str,
     title: str = Form(...),
     content: str = Form(...),
+    image: Optional[UploadFile] = File(None),
+    remove_image: bool = Form(False),
     user = Depends(get_current_user)
 ):
     if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    
-    try:
-        # First check if user owns the post
-        post = supabase.table("posts").select("*").eq("id", post_id).single().execute()
-        if post.data["user_id"] != user["id"]:
-            raise HTTPException(status_code=403, detail="Not authorized to edit this post")
+        raise HTTPException(status_code=401, detail="Not authenticated")
         
-        # Update the post
-        updated_post = supabase.table("posts").update({
+    try:
+        # Get current post
+        post = supabase.table("posts").select("*").eq("id", post_id).single().execute()
+        
+        if not post.data:
+            raise HTTPException(status_code=404, detail="Post not found")
+            
+        if post.data["user_id"] != user["id"]:
+            raise HTTPException(status_code=403, detail="Not authorized")
+            
+        # Handle image
+        image_url = post.data.get("image_url")
+        if remove_image and image_url:
+            await delete_image(image_url)
+            image_url = None
+        elif image:
+            # Delete old image if exists
+            if image_url:
+                await delete_image(image_url)
+            # Upload new image
+            image_url = await upload_image(image)
+            
+        # Update post
+        result = supabase.table("posts").update({
             "title": title,
-            "content": content
+            "content": content,
+            "image_url": image_url
         }).eq("id", post_id).execute()
         
         return RedirectResponse(url=f"/blog/posts/{post_id}", status_code=303)
     except APIError as e:
-        print(f"Error updating post: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to update post")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/posts/{post_id}/delete")
-async def delete_post_post(request: Request, post_id: str, user = Depends(get_current_user)):
-    return await delete_post(request, post_id, user)
-
-@router.delete("/posts/{post_id}")
-async def delete_post(request: Request, post_id: str, user = Depends(get_current_user)):
+async def delete_post(
+    request: Request,
+    post_id: str,
+    user = Depends(get_current_user)
+):
     if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    
-    try:
-        # First check if user owns the post
-        post = supabase.table("posts").select("*").eq("id", post_id).single().execute()
-        if post.data["user_id"] != user["id"]:
-            raise HTTPException(status_code=403, detail="Not authorized to delete this post")
+        raise HTTPException(status_code=401, detail="Not authenticated")
         
-        # Delete the post
-        supabase.table("posts").delete().eq("id", post_id).execute()
+    try:
+        # Get post to check ownership and get image URL
+        post = supabase.table("posts").select("*").eq("id", post_id).single().execute()
+        
+        if not post.data:
+            raise HTTPException(status_code=404, detail="Post not found")
+            
+        if post.data["user_id"] != user["id"]:
+            raise HTTPException(status_code=403, detail="Not authorized")
+            
+        # Delete image if exists
+        if post.data.get("image_url"):
+            await delete_image(post.data["image_url"])
+            
+        # Delete post
+        result = supabase.table("posts").delete().eq("id", post_id).execute()
         
         return RedirectResponse(url="/blog/posts", status_code=303)
     except APIError as e:
-        print(f"Error deleting post: {str(e)}")
-        raise HTTPException(status_code=500, detail="Failed to delete post")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/posts/{post_id}/comments")
 async def create_comment(
