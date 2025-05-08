@@ -12,9 +12,9 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/posts")
 async def list_posts(request: Request, user = Depends(get_current_user)):
     try:
-        # First, get just the posts (this will work due to RLS policy)
-        posts = supabase.table("posts").select(
-            "*"  # Removed the auth.users join for now
+        # Use the posts_with_users view instead of the posts table
+        posts = supabase.table("posts_with_users").select(
+            "*"
         ).order("created_at", desc=True).execute()
     
         return templates.TemplateResponse(
@@ -77,14 +77,14 @@ async def create_post(
 @router.get("/posts/{post_id}")
 async def get_post(request: Request, post_id: str, user = Depends(get_current_user)):
     try:
-        # First, get just the post
-        post = supabase.table("posts").select(
-            "*"  # Removed the auth.users join for now
+        # Use the posts_with_users view instead of the posts table
+        post = supabase.table("posts_with_users").select(
+            "*"
         ).eq("id", post_id).single().execute()
 
-        # Then get comments
-        comments = supabase.table("comments").select(
-            "*"  # Removed the auth.users join for now
+        # Use the comments_with_users view instead of the comments table
+        comments = supabase.table("comments_with_users").select(
+            "*"
         ).eq("post_id", post_id).order("created_at").execute()
 
         return templates.TemplateResponse(
