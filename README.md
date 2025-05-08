@@ -2,10 +2,6 @@
 
 A simple blog application demonstrating various Supabase features using FastAPI.
 
-## Documentation
-
-- [Supabase Overview](docs/supabase_overview.md) - A comprehensive guide to Supabase features and capabilities
-
 ## Setup
 
 1. Create a virtual environment:
@@ -52,4 +48,5 @@ By default, the application will connect to a local Supabase instance. To use a 
 
 ## Documentation
 
+- [Supabase Overview](docs/supabase_overview.md) - A comprehensive guide to Supabase features and capabilities
 - [Database Schema and Test Data](docs/database.md)
