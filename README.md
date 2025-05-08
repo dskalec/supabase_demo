@@ -48,4 +48,5 @@ By default, the application will connect to a local Supabase instance. To use a 
 
 ## Documentation
 
-- [Database Schema and Test Data](docs/database.md)
+- [Supabase Overview](docs/supabase_overview.md) - A comprehensive guide to Supabase features and capabilities
+- [Database Schema and Test Data](docs/database.md) - Overview of the base structure of the database we'll be using
