@@ -39,6 +39,15 @@ create trigger increment_post_view_count
   for each row
   execute function increment_view_count();
 
+-- Drop and recreate the posts_with_users view to include view_count
+drop view if exists posts_with_users;
+create view posts_with_users as
+select 
+    p.*,
+    u.display_name
+from posts p
+left join user_display_names u on p.user_id = u.user_id;
+
 -- Drop existing real-time configuration
 drop publication if exists supabase_realtime;
 

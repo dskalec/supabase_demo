@@ -51,10 +51,12 @@ async def delete_image(image_url: str) -> bool:
 @router.get("/posts", name="list_posts")
 async def list_posts(request: Request, user = Depends(get_current_user)):
     try:
-        # First, get just the posts (this will work due to RLS policy)
-        posts = supabase.table("posts").select(
-            "id, title, content, image_url, created_at, view_count, user_id"
+        # Use the posts_with_users view which includes both display names and view_count
+        posts = supabase.table("posts_with_users").select(
+            "*"
         ).order("created_at", desc=True).execute()
+
+        print(posts.data)
     
         return templates.TemplateResponse(
             "blog/posts.html",
@@ -62,7 +64,7 @@ async def list_posts(request: Request, user = Depends(get_current_user)):
                 "request": request,
                 "posts": posts.data,
                 "user": user,
-                "title": "Blog Posts"  # Added title for consistency
+                "title": "Blog Posts"
             }
         )
     except APIError as e:
@@ -73,7 +75,7 @@ async def list_posts(request: Request, user = Depends(get_current_user)):
                 "request": request,
                 "posts": [],
                 "user": user,
-                "title": "Blog Posts"  # Added title for consistency
+                "title": "Blog Posts"
             }
         )
 
@@ -126,18 +128,18 @@ async def get_post(
 ):
     """Get a single post by ID."""
     try:
-        # Get the post
-        response = supabase.table("posts").select(
-            "id, title, content, image_url, created_at, view_count, user_id"
+        # Use the posts_with_users view which includes both display names and view_count
+        post = supabase.table("posts_with_users").select(
+            "*"
         ).eq("id", post_id).single().execute()
-        post = response.data
+        post = post.data
 
-        # Get comments for the post
-        comments_response = supabase.table("comments").select(
-            "id, content, created_at, user_id"
+        # Use the comments_with_users view for comments
+        comments = supabase.table("comments_with_users").select(
+            "*"
         ).eq("post_id", post_id).order("created_at").execute()
         
-        comments = comments_response.data
+        comments = comments.data
 
         # Record view if user is authenticated
         if user:
