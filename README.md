@@ -48,8 +48,8 @@ By default, the application will connect to a local Supabase instance. To use a 
 
 ## Documentation
 
-
 - [Supabase Overview](docs/supabase_overview.md) - A comprehensive guide to Supabase features and capabilities
 - [Database Schema and Test Data](docs/database.md) - Overview of the base structure of the database we'll be using
 - [Authentication](docs/auth.md) - Overview of how to implement authentication using Supabase's built-in functionalities
 - [Image Upload and Storage](docs/storage.md) - Supabase storage overview
+- [Real-time Features](docs/realtime.md) - Explanation on the real-time features of supabase.
