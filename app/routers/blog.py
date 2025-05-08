@@ -48,12 +48,12 @@ async def delete_image(image_url: str) -> bool:
         print(f"Error deleting file: {e}")
         return False
 
-@router.get("/posts")
+@router.get("/posts", name="list_posts")
 async def list_posts(request: Request, user = Depends(get_current_user)):
     try:
         # First, get just the posts (this will work due to RLS policy)
         posts = supabase.table("posts").select(
-            "*"  # Removed the auth.users join for now
+            "id, title, content, image_url, created_at, view_count, user_id"
         ).order("created_at", desc=True).execute()
     
         return templates.TemplateResponse(
@@ -77,7 +77,7 @@ async def list_posts(request: Request, user = Depends(get_current_user)):
             }
         )
 
-@router.get("/posts/new")
+@router.get("/posts/new", name="new_post")
 async def new_post_form(request: Request, user = Depends(get_current_user)):
     if not user:
         return RedirectResponse(url="/auth/login", status_code=303)
@@ -91,7 +91,7 @@ async def new_post_form(request: Request, user = Depends(get_current_user)):
         }
     )
 
-@router.post("/posts")
+@router.post("/posts", name="create_post")
 async def create_post(
     request: Request,
     title: str = Form(...),
@@ -118,34 +118,48 @@ async def create_post(
     except APIError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/posts/{post_id}")
-async def get_post(request: Request, post_id: str, user = Depends(get_current_user)):
+@router.get("/posts/{post_id}", name="get_post")
+async def get_post(
+    post_id: str,
+    request: Request,
+    user: Optional[dict] = Depends(get_current_user)
+):
+    """Get a single post by ID."""
     try:
-        # First, get just the post
-        post = supabase.table("posts").select(
-            "*"  # Removed the auth.users join for now
+        # Get the post
+        response = supabase.table("posts").select(
+            "id, title, content, image_url, created_at, view_count, user_id"
         ).eq("id", post_id).single().execute()
+        post = response.data
 
-        # Then get comments
-        comments = supabase.table("comments").select(
-            "*"  # Removed the auth.users join for now
+        # Get comments for the post
+        comments_response = supabase.table("comments").select(
+            "id, content, created_at, user_id"
         ).eq("post_id", post_id).order("created_at").execute()
+        
+        comments = comments_response.data
+
+        # Record view if user is authenticated
+        if user:
+            supabase.table("post_views").insert({
+                "post_id": post_id,
+                "user_id": user["id"]
+            }).execute()
 
         return templates.TemplateResponse(
             "blog/post_detail.html",
             {
                 "request": request,
-                "post": post.data,
-                "comments": comments.data,
-                "user": user,
-                "title": post.data["title"]
+                "post": post,
+                "comments": comments,
+                "user": user
             }
         )
-    except APIError as e:
-        print(f"Error fetching post: {str(e)}")  # Debug print
-        raise HTTPException(status_code=404, detail="Post not found") 
+    except Exception as e:
+        print(f"Error getting post: {e}")
+        raise HTTPException(status_code=404, detail="Post not found")
 
-@router.get("/posts/{post_id}/edit")
+@router.get("/posts/{post_id}/edit", name="edit_post")
 async def edit_post_form(request: Request, post_id: str, user = Depends(get_current_user)):
     if not user:
         return RedirectResponse(url="/auth/login", status_code=303)
@@ -169,7 +183,7 @@ async def edit_post_form(request: Request, post_id: str, user = Depends(get_curr
         print(f"Error fetching post: {str(e)}")
         raise HTTPException(status_code=404, detail="Post not found")
 
-@router.post("/posts/{post_id}")
+@router.post("/posts/{post_id}", name="update_post")
 async def update_post(
     request: Request,
     post_id: str,
@@ -215,7 +229,7 @@ async def update_post(
     except APIError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/posts/{post_id}/delete")
+@router.post("/posts/{post_id}/delete", name="delete_post")
 async def delete_post(
     request: Request,
     post_id: str,
@@ -245,7 +259,7 @@ async def delete_post(
     except APIError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.post("/posts/{post_id}/comments")
+@router.post("/posts/{post_id}/comments", name="create_comment")
 async def create_comment(
     request: Request,
     post_id: str,
@@ -267,7 +281,7 @@ async def create_comment(
         print(f"Error creating comment: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to create comment")
 
-@router.post("/comments/{comment_id}")
+@router.post("/comments/{comment_id}", name="update_comment")
 async def update_comment(
     request: Request,
     comment_id: str,
@@ -293,7 +307,7 @@ async def update_comment(
         print(f"Error updating comment: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to update comment")
 
-@router.post("/comments/{comment_id}/delete")
+@router.post("/comments/{comment_id}/delete", name="delete_comment")
 async def delete_comment_post(request: Request, comment_id: str, user = Depends(get_current_user)):
     return await delete_comment(request, comment_id, user)
 
